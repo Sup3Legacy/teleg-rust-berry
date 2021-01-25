@@ -5,6 +5,7 @@ use telegram_bot::*;
 async fn pong(api : &Api, message : &Message) -> Result<(), Error> {
     api.send(message.text_reply("pong")).await?;
     Ok(())
+    
 }
 
 #[tokio::main]
