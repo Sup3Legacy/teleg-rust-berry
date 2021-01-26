@@ -1,13 +1,13 @@
 use std::env;
 use futures::StreamExt;
 use telegram_bot::*;
-use json;
 use std::io::Read;
 use serde::Deserialize;
 use serde_json;
-use std::fs::{self, DirEntry};
+use std::fs::{self};
 use std::path::Path;
 use std::collections::HashMap;
+use pdf_form_ids::{Form, FieldType};
 
 async fn pong(api : &Api, message : &Message) -> Result<(), Error> {
     api.send(message.text_reply("pong")).await?;
@@ -29,17 +29,17 @@ fn read_json_to_person(path : &Path) -> Person {
     let mut value = String::new();
     let mut file = std::fs::File::open(path.to_str().unwrap()).unwrap();
     file.read_to_string(&mut value).unwrap();
-    serde_json::from_str(&value).expect("JSON file we incorrectly formatted")
+    serde_json::from_str(&value).expect("JSON file incorrectly formatted")
 }
 
 fn get_persons<'a>() -> Result<HashMap<String, Person>, Error> {
-    let path = Path::new("../../persons");
+    let path = Path::new("persons");
     let mut map = HashMap::new();
     for entry in fs::read_dir(&path).unwrap() {
         let file_path = entry.unwrap().path();
         let person : Person = read_json_to_person(&file_path);
         let key = String::from(file_path.file_stem().unwrap().to_str().unwrap());
-        println!("Inserted ({}, {:#?}", key, person);
+        //println!("Inserted ({}, {:#?}", key, person);
         map.insert(key, person);
     }
     Ok(map)
@@ -52,7 +52,20 @@ async fn main() -> Result<(), Error> {
     let api = Api::new(token);
     let mut stream = api.stream();
 
-    let mut personnes_hash : HashMap<String, Person> = get_persons()?;
+    let personnes_hash : HashMap<String, Person> = match get_persons() {
+        Ok(p) => p,
+        _ => {
+            println!("Could not initialize data.");
+            HashMap::new()
+        }
+    };
+
+    let mut form = Form::load(Path::new("modele.pdf")).unwrap();
+    let field_types = form.get_all_types();
+    for ty in field_types {
+        println!("{:?}", ty);
+    };
+
     while let Some(update) = stream.next().await {
         let update = update?;
         if let UpdateKind::Message(message) = update.kind {
