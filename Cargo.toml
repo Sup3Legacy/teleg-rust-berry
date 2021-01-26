@@ -10,3 +10,4 @@ edition = "2018"
 telegram-bot = "0.8.0"
 futures = { version = "0.3", default-features = false }
 tokio = {"version"= "0.2", features=["rt-threaded", "macros"]}
+json = "0.12.4"
