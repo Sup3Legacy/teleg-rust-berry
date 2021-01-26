@@ -60,26 +60,22 @@ async fn main() -> Result<(), Error> {
         }
     };
 
-    let mut form = Form::load(Path::new("modele.pdf")).unwrap();
-    let field_types = form.get_all_types();
-    for ty in field_types {
-        println!("{:?}", ty);
-    };
+    
 
     while let Some(update) = stream.next().await {
         let update = update?;
         if let UpdateKind::Message(message) = update.kind {
             if let MessageKind::Text { ref data, .. } = message.kind {
                 println!("<{}>: {}", &message.from.first_name, data);
-                if data == "/ping" {
-                    pong(&api, &message).await.unwrap();
-                }
                 let mut message_iter = data.split_whitespace();
-                if (&mut message_iter).next().unwrap() == "/attest" {
+                let first = (&mut message_iter).next().unwrap();
+                if first == "/attest" {
                     match message_iter.next() {
                         Some(key) => {
                             match &personnes_hash.get(key) {
-                                Some(p) => println!("{:#?}", p),
+                                Some(p) => {
+                                    api.send(message.text_reply(format!("{:#?}", p))).await?;
+                                },
                                 None => {
                                     api.send(message.text_reply(format!("Key not found : {}", key))).await?;
                                 }
@@ -89,6 +85,9 @@ async fn main() -> Result<(), Error> {
                             api.send(message.text_reply(format!("/attest needs exactly one argument"))).await?;
                         }
                     }
+                }
+                if first == "/ping" {
+                    pong(&api, &message).await.unwrap();
                 }
             }
         }
