@@ -7,7 +7,8 @@ use serde_json;
 use std::fs::{self};
 use std::path::Path;
 use std::collections::HashMap;
-use pdf_form_ids::{Form, FieldType};
+//use pdf_form::{Form, FieldType};
+use lopdf::Document;
 
 async fn pong(api : &Api, message : &Message) -> Result<(), Error> {
     api.send(message.text_reply("pong")).await?;
@@ -60,7 +61,19 @@ async fn main() -> Result<(), Error> {
         }
     };
 
+    /*
+    let mut form = Form::load("modele.pdf").unwrap();
+    let field_types = form.get_all_types();
+    for ty in field_types {
+        println!("{:?}", ty);
+    };    
+    */
     
+
+    let mut doc = Document::load("modele2.pdf").unwrap();
+    doc.replace_text(1, "ATTESTATION DE DÉPLACEMENT DÉROGATOIRE
+    DURANT LES HORAIRES DU COUVRE-FEU", "mdr").unwrap();
+    doc.save("modified.pdf").unwrap();
 
     while let Some(update) = stream.next().await {
         let update = update?;
